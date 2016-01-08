@@ -25,6 +25,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "libambit.h"
+#include "debug.h"
 
 typedef struct libambit_sbem0102_s {
     uint16_t chunk_size;
@@ -159,15 +160,41 @@ static inline int libambit_sbem0102_data_next(libambit_sbem0102_data_t *object)
     // Initial state
     if (object->read_ptr == NULL) {
         object->read_ptr = object->data;
+//        LOG_INFO("read_ptr 0x%x data %x %x %x %x",object->read_ptr,*object->read_ptr, *(object->read_ptr+1), *(object->read_ptr+2), *(object->read_ptr+3));
         return 0;
     }
     // Loop state
-    if (object->data + object->size > object->read_ptr + 2 + libambit_sbem0102_data_len(object)) {
-        object->read_ptr += 2 + libambit_sbem0102_data_len(object);
-        return 0;
+
+    if(object->read_ptr[0] == 0x8A || object->read_ptr[0] == 0x7A) {
+    	int pos = 1;
+    	while( (!(object->read_ptr[pos]==0x7a && object->read_ptr[pos+1]==0x44))) {
+    		pos++;
+    	}
+    	LOG_INFO("read_ptr 0x%x pos %d data 0x%x size %d", object->read_ptr, pos, object->data, object->size);
+    	if (object->data + object->size > object->read_ptr + pos + 100) { // guess that at least 100 bytes are required for a valid log header
+    		object->read_ptr += pos;
+    		return 0;
+    	}
+    } else {
+    	if (object->data + object->size > object->read_ptr + 2 + libambit_sbem0102_data_len(object)) {
+    		object->read_ptr += 2 + libambit_sbem0102_data_len(object);
+    		return 0;
+    	}
     }
+
     // Exit state
     return -1;
+}
+
+static inline int libambit_sbem0102_data_inc(libambit_sbem0102_data_t *object, uint8_t step)
+{
+
+	if (object->data > object->read_ptr + step) {
+		object->read_ptr += step;
+		LOG_INFO("read_ptr 0x%x data %x %x %x %x",object->read_ptr,*object->read_ptr, *(object->read_ptr+1), *(object->read_ptr+2), *(object->read_ptr+3));
+		return 0;
+	}
+	return -1;
 }
 
 #endif /* __SBEM0102_H__ */

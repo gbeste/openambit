@@ -93,11 +93,13 @@ void DeviceManager::startSync(bool readAllLogs = false, bool syncTime = true, bo
     if (syncOrbit) syncParts+=2;
 
     if (this->deviceObject != NULL) {
+    	libambit_sync_display_show(this->deviceObject);
+
         emit this->syncProgressInform(QString(tr("Reading personal settings")), false, true, 0);
         res = libambit_personal_settings_get(this->deviceObject, &currentPersonalSettings);
         currentSyncPart++;
 
-        libambit_sync_display_show(this->deviceObject);
+
 
         if (syncTime && res != -1) {
             emit this->syncProgressInform(QString(tr("Setting date/time")), false, true, 100*currentSyncPart/syncParts);
@@ -149,6 +151,7 @@ void DeviceManager::chargeTimerHit()
 
     if (mutex.tryLock()) {
         if (this->deviceObject != NULL) {
+        	libambit_device_status_get(this->deviceObject, &status); // 2.0.45 test
             if ((res = libambit_device_status_get(this->deviceObject, &status)) == 0) {
                 emit deviceCharge(status.charge);
             }

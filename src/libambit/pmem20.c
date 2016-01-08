@@ -235,6 +235,7 @@ ambit_log_entry_t *libambit_pmem20_log_read_entry(libambit_pmem20_t *object)
     }
     buffer_offset += tmp_len;
     // Now that we know number of samples, allocate space for them!
+    LOG_INFO("Log entry got %d samples", log_entry->samples_count);
     if ((log_entry->samples = calloc(log_entry->header.samples_count, sizeof(ambit_log_sample_t))) == NULL) {
         if (log_entry->header.activity_name) {
             free(log_entry->header.activity_name);
@@ -326,12 +327,13 @@ ambit_log_entry_t *libambit_pmem20_log_read_entry_address(libambit_pmem20_t *obj
         return NULL;
     }
 
-    LOG_INFO("Reading log entry from address=%08x", address);
+//    LOG_INFO("Reading log entry from address=%08x", address);
     log_entry->header.activity_name = NULL;
 
     // Handle wrap in "the middle" of the log
     next_address = address;
     while (buffer_read < length) {
+ //   	LOG_INFO("next_address=%08x read_length=%d", next_address, read_length);
         if (next_address >= object->log.mem_start + object->log.mem_size) {
             next_address = object->log.mem_start + PMEM20_LOG_WRAP_START_OFFSET;
         }
@@ -341,10 +343,12 @@ ambit_log_entry_t *libambit_pmem20_log_read_entry_address(libambit_pmem20_t *obj
         else {
             read_length = length - buffer_read;
         }
+ //       LOG_INFO("next_address=%08x read_length=%d", next_address, read_length);
         if (next_address + read_length > object->log.mem_start + object->log.mem_size) {
-            read_length = object->log.mem_start + object->log.mem_size - next_address;
+           read_length = object->log.mem_start + object->log.mem_size - next_address;
         }
 
+ //       LOG_INFO("next_address=%08x read_length=%d", next_address, read_length);
         read_log_chunk(object, next_address, read_length, buffer + buffer_read);
 
         next_address += read_length;
@@ -369,6 +373,7 @@ ambit_log_entry_t *libambit_pmem20_log_read_entry_address(libambit_pmem20_t *obj
     }
     buffer_offset += tmp_len;
     // Now that we know number of samples, allocate space for them!
+    LOG_INFO("Log entry got %d samples, reading", log_entry->samples_count);
     if ((log_entry->samples = calloc(log_entry->header.samples_count, sizeof(ambit_log_sample_t))) == NULL) {
         if (log_entry->header.activity_name) {
             free(log_entry->header.activity_name);
@@ -446,6 +451,7 @@ int libambit_pmem20_log_parse_header(uint8_t *data, size_t datalen, ambit_log_he
     log_header->heartrate_min = read8inc(data, &offset);
 
     log_header->unknown2 = read8inc(data, &offset);
+    offset += 48; // fw 2.0.4
 
     log_header->temperature_max = read16inc(data, &offset);
     log_header->temperature_min = read16inc(data, &offset);
@@ -562,6 +568,7 @@ static int parse_sample(uint8_t *buf, size_t offset, uint8_t **spec, ambit_log_e
     uint16_t spec_count, spec_type, spec_offset;
     periodic_sample_spec_t *spec_entry;
     int i;
+
 
     switch (sample_type) {
       case 0:   /* periodic sample specifier */
@@ -1007,6 +1014,7 @@ static int read_log_chunk(libambit_pmem20_t *object, uint32_t address, uint32_t 
     uint32_t *_address = (uint32_t*)&send_data[0];
     uint32_t *_length = (uint32_t*)&send_data[4];
 
+//    LOG_INFO("address 0x%x length %d", address, length);
     if ((address + object->chunk_size) > (object->log.mem_start + object->log.mem_size)) {
         length = object->log.mem_start + object->log.mem_size - address;
     }
@@ -1014,11 +1022,16 @@ static int read_log_chunk(libambit_pmem20_t *object, uint32_t address, uint32_t 
     *_address = htole32(address);
     *_length = htole32(length);
 
-    if (libambit_protocol_command(object->ambit_object, ambit_command_log_read, send_data, sizeof(send_data), &reply, &replylen, 0) == 0 &&
-        replylen == length + 8) {
+
+    if (libambit_protocol_command(object->ambit_object, ambit_command_log_read, send_data, sizeof(send_data), &reply, &replylen, 0) == 0 && replylen == length + 8) {
         memcpy(buffer, reply + 8, length);
+
         ret = 0;
     }
+
+ //   LOG_INFO("replylen: %d    length:  %d", replylen, length);
+ //   LOG_INFO("buffer: %2x %2x %2x %2x %2x %2x %2x %2x",reply[0],reply[1],reply[2],reply[3],reply[4],reply[5],reply[6],reply[7]);
+ //   LOG_INFO("buffer: %2x %2x %2x %2x %2x %2x %2x %2x",reply[8],reply[9],reply[10],reply[11],reply[12],reply[13],reply[14],reply[15]);
 
     libambit_protocol_free(reply);
 

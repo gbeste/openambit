@@ -26,6 +26,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "debug.h"
 /*
  * Local definitions
  */
@@ -109,6 +110,7 @@ int libambit_sbem0102_command_request(libambit_sbem0102_t *object, uint16_t comm
     // TODO: We have no idea how to deal with multiple packets at the moment,
     // just fail for now
     if (data_objects != NULL && data_objects->size > object->chunk_size) {
+    	LOG_INFO("libambit_sbem0102_command_request -    --1");
         return -1;
     }
 
@@ -146,9 +148,9 @@ int libambit_sbem0102_command_request(libambit_sbem0102_t *object, uint16_t comm
         if (replylen >= sizeof(header) && memcmp(reply + 6, header + 6, 8) == 0) {
             if (replylen > sizeof(header)) {
                 // Copy message to reply_data object
-                reply_data->data = malloc(replylen - sizeof(header));
-                memcpy(reply_data->data, reply + sizeof(header), replylen - sizeof(header));
-                reply_data->size = replylen - sizeof(header);
+            	reply_data->data = malloc(replylen - sizeof(header));
+            	memcpy(reply_data->data, reply + sizeof(header), replylen - sizeof(header));
+            	reply_data->size = replylen - sizeof(header);
 
                 // Check if this reply was just a part (5th byte is the current
                 // guess on how to determine)
@@ -168,9 +170,9 @@ int libambit_sbem0102_command_request(libambit_sbem0102_t *object, uint16_t comm
                     }
 
                     if (replylen > 6) {
-                        reply_data->data = realloc(reply_data->data, reply_data->size + replylen - 6);
-                        memcpy(reply_data->data + reply_data->size, reply + 6, replylen - 6);
-                        reply_data->size += replylen - 6;
+                    	reply_data->data = realloc(reply_data->data, reply_data->size + replylen - 6);
+                    	memcpy(reply_data->data + reply_data->size, reply + 6, replylen - 6);
+                    	reply_data->size += replylen - 6;
                     }
                 }
             }
@@ -179,6 +181,8 @@ int libambit_sbem0102_command_request(libambit_sbem0102_t *object, uint16_t comm
         }
 
         libambit_protocol_free(reply);
+
+      	LOG_INFO("%2x %2x %2x %2x %2x %2x %2x %2x",reply_data->data[0],reply_data->data[1],reply_data->data[2],reply_data->data[3],reply_data->data[4],reply_data->data[5],reply_data->data[6],reply_data->data[7]);
     }
 
     free(send_data);
@@ -205,6 +209,7 @@ int libambit_sbem0102_command_request_raw(libambit_sbem0102_t *object, uint16_t 
                 reply_data->data = malloc(replylen - sizeof(header));
                 memcpy(reply_data->data, reply + sizeof(header), replylen - sizeof(header));
                 reply_data->size = replylen - sizeof(header);
+//                LOG_INFO("Command 0x%x Copy message to reply_data object size = %d",command,reply_data->size);
             }
 
             ret = 0;

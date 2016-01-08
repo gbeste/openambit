@@ -25,6 +25,8 @@
 
 #include "hidapi/hidapi.h"
 
+#include "debug.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -137,10 +139,12 @@ int libambit_protocol_command(ambit_object_t *object, uint16_t command, uint8_t 
         reply_data_len = le32toh(msg->payload_len);
         dataoffset = 0;
         packet_payload_len = fmin(42, reply_data_len);
+        LOG_INFO("retrieving reply for command 0x%x of length %d %d", command,reply_data_len,packet_payload_len);
         if (reply_data != NULL && replylen != NULL) {
             *replylen = reply_data_len;
             *reply_data = malloc(reply_data_len);
             memcpy(&(*reply_data)[dataoffset], &buf[20], packet_payload_len);
+            LOG_INFO("reply_data != NULL && replylen != NULL");
         }
         dataoffset += packet_payload_len;
         reply_data_len -= packet_payload_len;

@@ -52,7 +52,9 @@ static ambit_device_info_t * ambit_device_info_new(const struct hid_device_info 
 /*
  * Static variables
  */
-static uint8_t komposti_version[] = { 0x02, 0x00, 0x2d, 0x00 };
+// static uint8_t komposti_version[] = { 0x02, 0x00, 0x2d, 0x00 };
+// static uint8_t komposti_version[] = { 0x02, 0x03, 0x06, 0x00 }; 2.0.4
+static uint8_t komposti_version[] = { 0x02, 0x04, 0x45, 0x00 }; // 2.0.45
 
 /*
  * Public functions

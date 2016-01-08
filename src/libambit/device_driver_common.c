@@ -49,6 +49,7 @@ int libambit_device_driver_lock_log(ambit_object_t *object, bool lock)
     if ((ret = libambit_protocol_command(object, ambit_command_lock_check, NULL, 0, &reply_data, &replylen, 0)) == 0) {
         current_lock = le32toh(*(uint32_t*)reply_data);
         libambit_protocol_free(reply_data);
+        LOG_INFO("received lock status 0x%x",current_lock);
     }
 
     if (lock && current_lock == 0) {

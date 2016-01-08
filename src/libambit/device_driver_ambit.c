@@ -211,6 +211,7 @@ static int log_read(ambit_object_t *object, ambit_log_skip_cb skip_cb, ambit_log
 
     if (read_pmem) {
         if (libambit_pmem20_log_init(&object->driver_data->pmem20, PMEM20_LOG_START, PMEM20_LOG_SIZE) != 0) {
+        	LOG_INFO("failed");
             return -1;
         }
 
